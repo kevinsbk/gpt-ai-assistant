@@ -1,10 +1,13 @@
-import { AxiosError } from 'axios';
-import fs from 'fs';
-import config from '../config/index.js';
-import { t } from '../locales/index.js';
+import { AxiosError } from "axios";
+import fs from "fs";
+import config from "../config/index.js";
+import { t } from "../locales/index.js";
 import {
-  MESSAGE_TYPE_IMAGE, MESSAGE_TYPE_TEXT, SOURCE_TYPE_GROUP, SOURCE_TYPE_USER,
-} from '../services/line.js';
+  MESSAGE_TYPE_IMAGE,
+  MESSAGE_TYPE_TEXT,
+  SOURCE_TYPE_GROUP,
+  SOURCE_TYPE_USER,
+} from "../services/line.js";
 import {
   addMark,
   convertText,
@@ -13,14 +16,21 @@ import {
   fetchGroup,
   fetchUser,
   generateTranscription,
-} from '../utils/index.js';
-import { Command, COMMAND_BOT_FORGET, COMMAND_BOT_RETRY } from './commands/index.js';
-import { updateHistory } from './history/index.js';
+} from "../utils/index.js";
 import {
-  ImageMessage, Message, TemplateMessage, TextMessage,
-} from './messages/index.js';
-import { Bot, Event, Source } from './models/index.js';
-import { getSources, setSources } from './repository/index.js';
+  Command,
+  COMMAND_BOT_FORGET,
+  COMMAND_BOT_RETRY,
+} from "./commands/index.js";
+import { updateHistory } from "./history/index.js";
+import {
+  ImageMessage,
+  Message,
+  TemplateMessage,
+  TextMessage,
+} from "./messages/index.js";
+import { Bot, Event, Source } from "./models/index.js";
+import { getSources, setSources } from "./repository/index.js";
 
 class Context {
   /**
@@ -81,22 +91,25 @@ class Context {
    */
   get trimmedText() {
     if (this.event.isText) {
-      const text = this.event.text.replaceAll('　', ' ').replace(config.BOT_NAME, '').trim();
+      const text = this.event.text
+        .replaceAll("　", " ")
+        .replace(config.BOT_NAME, "")
+        .trim();
       return addMark(text);
     }
     if (this.event.isAudio) {
-      const text = this.transcription.replace(config.BOT_NAME, '').trim();
+      const text = this.transcription.replace(config.BOT_NAME, "").trim();
       return addMark(text);
     }
     if (this.event.isImage) {
       return this.transcription.trim();
     }
-    return '?';
+    return "?";
   }
 
   get hasBotName() {
     if (this.event.isText) {
-      const text = this.event.text.replaceAll('　', ' ').trim().toLowerCase();
+      const text = this.event.text.replaceAll("　", " ").trim().toLowerCase();
       return text.startsWith(config.BOT_NAME.toLowerCase());
     }
     if (this.event.isAudio) {
@@ -131,7 +144,9 @@ class Context {
         return this.pushError(err);
       }
     }
-    updateHistory(this.id, (history) => history.write(this.source.name, this.trimmedText));
+    updateHistory(this.id, (history) =>
+      history.write(this.source.name, this.trimmedText)
+    );
     return this;
   }
 
@@ -140,13 +155,21 @@ class Context {
    */
   validate() {
     const sources = getSources();
-    const groups = Object.values(sources).filter(({ type }) => type === SOURCE_TYPE_GROUP);
-    const users = Object.values(sources).filter(({ type }) => type === SOURCE_TYPE_USER);
-    if (this.event.isGroup && !sources[this.groupId] && groups.length >= config.APP_MAX_GROUPS) {
-      throw new Error(t('__ERROR_MAX_GROUPS_REACHED'));
+    const groups = Object.values(sources).filter(
+      ({ type }) => type === SOURCE_TYPE_GROUP
+    );
+    const users = Object.values(sources).filter(
+      ({ type }) => type === SOURCE_TYPE_USER
+    );
+    if (
+      this.event.isGroup &&
+      !sources[this.groupId] &&
+      groups.length >= config.APP_MAX_GROUPS
+    ) {
+      throw new Error(t("__ERROR_MAX_GROUPS_REACHED"));
     }
     if (!sources[this.userId] && users.length >= config.APP_MAX_USERS) {
-      throw new Error(t('__ERROR_MAX_USERS_REACHED'));
+      throw new Error(t("__ERROR_MAX_USERS_REACHED"));
     }
   }
 
@@ -159,7 +182,8 @@ class Context {
         type: SOURCE_TYPE_GROUP,
         name: groupName,
         bot: new Bot({
-          isActivated: !config.BOT_DEACTIVATED,
+          // Disable by default, use 請問
+          isActivated: false,
         }),
       });
     }
@@ -197,12 +221,10 @@ class Context {
    * @param {Array<string>} param.aliases
    * @returns {boolean}
    */
-  hasCommand({
-    text,
-    aliases,
-  }) {
+  hasCommand({ text, aliases }) {
     const content = this.trimmedText.toLowerCase();
-    if (aliases.some((alias) => content.startsWith(alias.toLowerCase()))) return true;
+    if (aliases.some((alias) => content.startsWith(alias.toLowerCase())))
+      return true;
     if (content.startsWith(text.toLowerCase())) return true;
     return false;
   }
@@ -264,16 +286,28 @@ class Context {
   pushError(err) {
     this.error = err;
     console.log(this.error.message);
-    if (err.code === 'ECONNABORTED') {
+    if (err.code === "ECONNABORTED") {
       if (config.ERROR_MESSAGE_DISABLED) return this;
-      return this.pushText(t('__ERROR_ECONNABORTED'), [COMMAND_BOT_RETRY, COMMAND_BOT_FORGET]);
+      return this.pushText(t("__ERROR_ECONNABORTED"), [
+        COMMAND_BOT_RETRY,
+        COMMAND_BOT_FORGET,
+      ]);
     }
     if (err.response?.status >= 500) {
       if (config.ERROR_MESSAGE_DISABLED) return this;
-      return this.pushText(t('__ERROR_UNKNOWN'), [COMMAND_BOT_RETRY, COMMAND_BOT_FORGET]);
+      return this.pushText(t("__ERROR_UNKNOWN"), [
+        COMMAND_BOT_RETRY,
+        COMMAND_BOT_FORGET,
+      ]);
     }
-    if (err.config?.baseURL) this.pushText(`${err.config.method.toUpperCase()} ${err.config.baseURL}${err.config.url}`);
-    if (err.response) this.pushText(`Request failed with status code ${err.response.status}`);
+    if (err.config?.baseURL)
+      this.pushText(
+        `${err.config.method.toUpperCase()} ${err.config.baseURL}${
+          err.config.url
+        }`
+      );
+    if (err.response)
+      this.pushText(`Request failed with status code ${err.response.status}`);
     this.pushText(err.message);
     return this;
   }
