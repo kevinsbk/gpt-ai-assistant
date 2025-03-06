@@ -5,7 +5,8 @@ import {
   MESSAGE_TYPE_TEXT,
   MESSAGE_TYPE_IMAGE,
   SOURCE_TYPE_GROUP,
-} from '../../services/line.js';
+} from "../../services/line.js";
+import config from "../../config/index.js";
 
 class Event {
   type;
@@ -16,12 +17,7 @@ class Event {
 
   message;
 
-  constructor({
-    type,
-    replyToken,
-    source,
-    message,
-  }) {
+  constructor({ type, replyToken, source, message }) {
     this.type = type;
     this.replyToken = replyToken;
     this.source = source;
@@ -96,6 +92,16 @@ class Event {
    */
   get text() {
     return this.message.text;
+  }
+
+  /**
+   * @returns {boolean}
+   */
+  get hasGroupKeyword() {
+    if (!this.isText) return false;
+    return this.text
+      .toLowerCase()
+      .includes(config.BOT_GROUP_ACTIVATE_KEYWORD.toLowerCase());
   }
 }
 
