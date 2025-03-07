@@ -53,10 +53,8 @@ const exec = (context) =>
       updateHistory(context.id, (history) =>
         history.write(config.BOT_NAME, text)
       );
-      const actions = isFinishReasonStop
-        ? [COMMAND_BOT_FORGET]
-        : [COMMAND_BOT_CONTINUE];
-      context.pushText(text, actions);
+      // Remove all buttons
+      context.pushText(text);
     } catch (err) {
       context.pushError(err);
     }
